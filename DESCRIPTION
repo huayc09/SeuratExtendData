@@ -1,7 +1,7 @@
 Package: SeuratExtendData
 Type: Package
 Title: Data attached to SeuratExtend package
-Version: 0.1.0
+Version: 0.2.0
 Author: Yichao Hua
 Maintainer: Yichao Hua <huayc09@hotmail.com>
 Description: Datasets for "SeuratExtend" Package
