@@ -48,19 +48,33 @@ process_reactome_data <- function(spe, ensembl2reactome, pathways_relation, spec
   
   # Convert Ensembl IDs to gene symbols
   message("Found ", length(unique(ensembl2reactome_spe$V1)), " unique Ensembl IDs")
-  ensembl_genes <- EnsemblToGenesymbol(unique(ensembl2reactome_spe$V1), spe = spe)
   
-  # Create pathway to gene mapping
-  message("Creating pathway to gene mapping...")
-  path2gene <- split(
-    as.vector(ensembl2reactome_spe$V1), 
-    factor(ensembl2reactome_spe$V4)
-  ) %>%
-    lapply(function(x) {
-      ensembl_genes[ensembl_genes$ensembl_gene_id %in% x, species_params[[spe]]["symbol"]] %>% 
-        unique() %>%
-        as.character()
-    })
+  # Check if species is human or mouse
+  if (spe %in% c("human", "mouse")) {
+    ensembl_genes <- EnsemblToGenesymbol(unique(ensembl2reactome_spe$V1), spe = spe)
+    
+    # Create pathway to gene mapping
+    message("Creating pathway to gene mapping...")
+    path2gene <- split(
+      as.vector(ensembl2reactome_spe$V1), 
+      factor(ensembl2reactome_spe$V4)
+    ) %>%
+      lapply(function(x) {
+        ensembl_genes[ensembl_genes$ensembl_gene_id %in% x, species_params[[spe]]["symbol"]] %>% 
+          unique() %>%
+          as.character()
+      })
+  } else {
+    # For non-human/mouse species, skip gene symbol conversion
+    message("NOTE: Gene symbol conversion for ", species_params[[spe]]["name"], " is not fully implemented.")
+    message("Using Ensembl IDs directly as gene identifiers.")
+    
+    # Create pathway to gene mapping using Ensembl IDs directly
+    path2gene <- split(
+      as.vector(ensembl2reactome_spe$V1), 
+      factor(ensembl2reactome_spe$V4)
+    )
+  }
   
   # Get pathway names
   path_name <- ensembl2reactome_spe %>% 

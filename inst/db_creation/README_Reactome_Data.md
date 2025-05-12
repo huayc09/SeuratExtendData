@@ -74,7 +74,7 @@ rm(Reactome_Data)
 
 ## Step-by-Step Process (All Species)
 
-The detailed step-by-step approach below explains how to create custom Reactome databases for any species, including manual download options:
+The detailed step-by-step approach below explains how to create Reactome databases for various species. **Note that currently, full functionality (including gene symbol conversion) is only available for human and mouse. Support for other species is limited and may require additional customization.**
 
 ### Step 1: Download Required Files
 
@@ -144,7 +144,7 @@ cp SeuratExtendData/data-raw/create_Reactome_Data.R .
 
 ### Step 3: Process the Data
 
-Configure the script to process the species you want. Currently, the full functionality is only available for Human and Mouse due to gene conversion limitations. However, the Reactome dataset contains information for many species, including:
+Configure the script to process the species you want. **Important: Currently, full functionality with gene symbol conversion is only implemented for human and mouse.** The Reactome dataset contains information for many species, but additional work is needed to enable complete support for:
 
 - Human (Homo sapiens)
 - Mouse (Mus musculus)
@@ -192,22 +192,37 @@ The script will:
 
 ### Step 4: Understand Species IDs in Reactome
 
-Reactome uses taxonomic IDs to identify species. Common species IDs include:
+Reactome uses specific names and taxonomic IDs to identify species. Below is a list of species available in the dataset with their exact names (which should be used as `name` in `species_params`) and their abbreviated codes:
 
-- Human: 9606 (HSA)
-- Mouse: 10090 (MMU)
-- Rat: 10116 (RNO)
-- Zebrafish: 7955 (DRE)
-- Fruit fly: 7227 (DME)
-- Worm: 6239 (CEL)
-- Yeast: 4932 (SCE)
-- Pig: 9823 (SSC)
-- Cow: 9913 (BTA)
-- Chicken: 9031 (GGA)
+- Homo sapiens (HSA)
+- Mus musculus (MMU)
+- Rattus norvegicus (RNO)
+- Danio rerio (DRE)
+- Drosophila melanogaster (DME)
+- Caenorhabditis elegans (CEL)
+- Saccharomyces cerevisiae (SCE)
+- Sus scrofa (SSC)
+- Bos taurus (BTA)
+- Gallus gallus (GGA)
+- Canis familiaris (CFA)
+- Xenopus tropicalis (XTR)
+- Dictyostelium discoideum (DDI)
+- Plasmodium falciparum (PFA)
+- Schizosaccharomyces pombe (SPO)
 
-The script automatically handles these IDs, but it's useful to know them if you're looking at the raw data files.
+To specify one of these species in `species_params`, use the exact name as shown above. For example:
 
-> **Note:** To add support for species other than human and mouse, additional gene symbol conversion functionality would need to be implemented. If you need this capability, please request it through a GitHub issue.
+```r
+species_params <- list(
+  human = c(name = "Homo sapiens", title = "HSA", symbol = "hgnc_symbol"),
+  mouse = c(name = "Mus musculus", title = "MMU", symbol = "mgi_symbol"),
+  rat = c(name = "Rattus norvegicus", title = "RNO", symbol = "rgd_symbol")  # Example of adding rat
+)
+```
+
+The script automatically handles these IDs, but this reference is useful when configuring custom species parameters.
+
+> **Important Note:** The current implementation primarily supports human and mouse with full gene symbol conversion functionality. While the script can process data for other species, additional gene symbol conversion functions would need to be implemented for complete support. This is provided as a framework that can be extended. If you need support for additional species, please open a GitHub issue or contribute to the codebase.
 
 ## Using Your Custom Reactome Database
 
