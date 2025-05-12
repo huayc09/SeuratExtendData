@@ -71,15 +71,14 @@ source("create_GO_Data.R")
 custom_GO_Data <- readRDS("GO_Data.rds")
 
 # Use with SeuratExtend:
-# Remember to reload your original data when done
-if (requireNamespace("SeuratExtendData", quietly = TRUE)) {
-  original_GO_Data <- SeuratExtendData::GO_Data
-  assignInNamespace("GO_Data", custom_GO_Data, ns = "SeuratExtendData")
-  
-  message("Custom GO_Data loaded into SeuratExtendData namespace!")
-  message("Run your analysis, then restore the original data with:")
-  message('assignInNamespace("GO_Data", original_GO_Data, ns = "SeuratExtendData")')
-}
+# Simply assign to the global environment
+GO_Data <- custom_GO_Data
+
+# Run your analysis with SeuratExtend functions
+# seu <- GeneSetAnalysisGO(seu, parent = "immune_system_process")
+
+# When done, restore the original data by removing the global variable
+rm(GO_Data)
 ```
 
 ## Step-by-Step Process (All Species)
@@ -263,24 +262,22 @@ The script will:
 
 ## Using Your Custom GO Database
 
-After creating your custom GO database, you can use it with SeuratExtend:
+After creating your custom GO database, you can use it with SeuratExtend by simply assigning it to the global environment:
 
 ```r
 # Load your custom GO data
-custom_GO_Data <- readRDS("GO_Data.rds")
-
-# Save the original database (to restore later if needed)
-original_GO_Data <- SeuratExtendData::GO_Data
-
-# Replace the default database with your custom one
-assignInNamespace("GO_Data", custom_GO_Data, ns = "SeuratExtendData")
+GO_Data <- readRDS("GO_Data.rds")
+GO_ontology <- readRDS("GO_ontology.rds")  # If needed
 
 # Now run your analysis as usual
-# seu <- GeneSetAnalysisGO(seu, parent = "immune_system_process")
+seu <- GeneSetAnalysisGO(seu, parent = "immune_system_process")
 
-# When finished, you can restore the original database
-assignInNamespace("GO_Data", original_GO_Data, ns = "SeuratExtendData")
+# When finished, clean up by removing the global variables
+rm(GO_Data)
+rm(GO_ontology)
 ```
+
+This simple approach works because R searches for variables starting from the global environment before checking packages. When you create a global variable with the same name as a package variable, the global one takes precedence.
 
 ## Reusing Your Custom Database
 
@@ -288,15 +285,14 @@ After creating your custom database, save it somewhere permanent:
 
 ```r
 # Save for future use to avoid reprocessing
-saveRDS(custom_GO_Data, "my_permanent_GO_Data.rds")
+saveRDS(GO_Data, "my_permanent_GO_Data.rds")
 ```
 
-In future sessions, simply load this file instead of reprocessing everything:
+In future sessions, simply load this file into the global environment:
 
 ```r
-custom_GO_Data <- readRDS("my_permanent_GO_Data.rds")
-original_GO_Data <- SeuratExtendData::GO_Data
-assignInNamespace("GO_Data", custom_GO_Data, ns = "SeuratExtendData")
+GO_Data <- readRDS("my_permanent_GO_Data.rds")
+# Now you can use SeuratExtend functions with your custom data
 ```
 
 ## Troubleshooting

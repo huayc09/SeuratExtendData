@@ -32,29 +32,110 @@ library(dplyr)
 # Helper functions
 ###################################
 
+# Function to fix GAF file if fix_gaf.R is available
+try_fix_gaf <- function(gaf_file) {
+  # Check if fix_gaf.R exists in the current directory
+  if (file.exists("fix_gaf.R")) {
+    message("Found fix_gaf.R, attempting to fix the GAF file automatically...")
+    
+    # Source the fix script
+    source("fix_gaf.R")
+    
+    # Create fixed file path
+    fixed_file <- paste0(gaf_file, "_fixed.gaf")
+    
+    # Run the fix function
+    tryCatch({
+      fix_gaf(gaf_file, fixed_file)
+      message("Successfully fixed GAF file. Using the fixed file: ", fixed_file)
+      return(fixed_file)
+    }, error = function(e) {
+      message("Failed to fix GAF file automatically: ", e$message)
+      return(NULL)
+    })
+  } else {
+    # Try to download fix_gaf.R if it doesn't exist
+    message("fix_gaf.R not found in the current directory. Attempting to download it...")
+    
+    tryCatch({
+      download.file(
+        "https://raw.githubusercontent.com/huayc09/SeuratExtendData/main/data-raw/fix_gaf.R",
+        "fix_gaf.R"
+      )
+      message("Downloaded fix_gaf.R successfully. Attempting to fix the GAF file...")
+      
+      # Source the fix script
+      source("fix_gaf.R")
+      
+      # Create fixed file path
+      fixed_file <- paste0(gaf_file, "_fixed.gaf")
+      
+      # Run the fix function
+      tryCatch({
+        fix_gaf(gaf_file, fixed_file)
+        message("Successfully fixed GAF file. Using the fixed file: ", fixed_file)
+        return(fixed_file)
+      }, error = function(e) {
+        message("Failed to fix GAF file automatically: ", e$message)
+        return(NULL)
+      })
+    }, error = function(e) {
+      message("Failed to download fix_gaf.R: ", e$message)
+      return(NULL)
+    })
+  }
+}
+
 # Function to process ontology and annotation data for a single species
 process_species_data <- function(species_name, gaf_file, go_ontology) {
   message("\nProcessing ", species_name, " data...")
   
   # Read the GAF file
   message("Reading GAF file: ", gaf_file)
-  tryCatch({
-    GO_Annot <- readGAF(gaf_file)
-    message("Successfully read GAF file")
-  }, error = function(e) {
-    if(grepl("multiple DB object symbols or names", e$message)) {
-      stop(paste0("Error: The GAF file for ", species_name, " has multiple symbols or names for the same database object ID.\n",
-                  "Please fix this issue using the fix_gaf.R script:\n\n",
-                  "Option 1 - From R console:\n",
-                  "  source('fix_gaf.R')\n",
-                  "  fix_gaf('", gaf_file, "', '", gaf_file, "_fixed.gaf')\n\n",
-                  "Option 2 - From command line:\n",
-                  "  Rscript fix_gaf.R ", gaf_file, " ", gaf_file, "_fixed.gaf\n\n",
-                  "Then update the species_files list to use the fixed file."))
-    } else {
-      stop("Error reading GAF file: ", e$message)
-    }
-  })
+  success <- FALSE
+  attempts <- 0
+  max_attempts <- 2
+  
+  while (!success && attempts < max_attempts) {
+    attempts <- attempts + 1
+    tryCatch({
+      GO_Annot <- readGAF(gaf_file)
+      message("Successfully read GAF file")
+      success <- TRUE
+    }, error = function(e) {
+      if(grepl("multiple DB object symbols or names", e$message) && attempts < max_attempts) {
+        message("Error: The GAF file for ", species_name, " has multiple symbols or names for the same database object ID.")
+        message("Attempting to fix the GAF file automatically...")
+        
+        # Try to fix the GAF file
+        fixed_file <- try_fix_gaf(gaf_file)
+        
+        if (!is.null(fixed_file)) {
+          # Update the gaf_file to use the fixed version
+          gaf_file <<- fixed_file
+          # Update the species_files list in the parent environment to use the fixed file
+          if (exists("species_files", envir = .GlobalEnv)) {
+            species_files[[species_name]] <<- fixed_file
+          }
+        } else {
+          stop(paste0("Error: The GAF file for ", species_name, " has multiple symbols or names for the same database object ID.\n",
+                      "Automatic fixing failed. Please fix this issue manually using the fix_gaf.R script:\n\n",
+                      "Option 1 - From R console:\n",
+                      "  source('fix_gaf.R')\n",
+                      "  fix_gaf('", gaf_file, "', '", gaf_file, "_fixed.gaf')\n\n",
+                      "Option 2 - From command line:\n",
+                      "  Rscript fix_gaf.R ", gaf_file, " ", gaf_file, "_fixed.gaf\n\n",
+                      "Then update the species_files list to use the fixed file."))
+        }
+      } else {
+        stop("Error reading GAF file: ", e$message)
+      }
+    })
+  }
+  
+  if (!success) {
+    stop("Failed to process GAF file after ", max_attempts, " attempts")
+  }
   
   # Process ontology to match the annotation
   message("Processing GO ontology for ", species_name, "...")

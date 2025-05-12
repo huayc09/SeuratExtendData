@@ -62,15 +62,14 @@ source("create_Reactome_Data.R")
 custom_Reactome_Data <- readRDS("Reactome_Data.rds")
 
 # Use with SeuratExtend:
-# Remember to reload your original data when done
-if (requireNamespace("SeuratExtendData", quietly = TRUE)) {
-  original_Reactome_Data <- SeuratExtendData::Reactome_Data
-  assignInNamespace("Reactome_Data", custom_Reactome_Data, ns = "SeuratExtendData")
-  
-  message("Custom Reactome_Data loaded into SeuratExtendData namespace!")
-  message("Run your analysis, then restore the original data with:")
-  message('assignInNamespace("Reactome_Data", original_Reactome_Data, ns = "SeuratExtendData")')
-}
+# Simply assign to the global environment
+Reactome_Data <- custom_Reactome_Data
+
+# Run your analysis with SeuratExtend functions
+# seu <- GeneSetAnalysisReactome(seu, parent = "Immune System")
+
+# When done, restore the original data by removing the global variable
+rm(Reactome_Data)
 ```
 
 ## Step-by-Step Process (All Species)
@@ -212,24 +211,20 @@ The script automatically handles these IDs, but it's useful to know them if you'
 
 ## Using Your Custom Reactome Database
 
-After creating your custom Reactome database, you can use it with SeuratExtend:
+After creating your custom Reactome database, you can use it with SeuratExtend by simply assigning it to the global environment:
 
 ```r
 # Load your custom Reactome data
-custom_Reactome_Data <- readRDS("Reactome_Data.rds")
-
-# Save the original database (to restore later if needed)
-original_Reactome_Data <- SeuratExtendData::Reactome_Data
-
-# Replace the default database with your custom one
-assignInNamespace("Reactome_Data", custom_Reactome_Data, ns = "SeuratExtendData")
+Reactome_Data <- readRDS("Reactome_Data.rds")
 
 # Now run your analysis as usual
-# seu <- GeneSetAnalysisReactome(seu, parent = "Immune System")
+seu <- GeneSetAnalysisReactome(seu, parent = "Immune System")
 
-# When finished, you can restore the original database
-assignInNamespace("Reactome_Data", original_Reactome_Data, ns = "SeuratExtendData")
+# When finished, clean up by removing the global variable
+rm(Reactome_Data)
 ```
+
+This simple approach works because R searches for variables starting from the global environment before checking packages. When you create a global variable with the same name as a package variable, the global one takes precedence.
 
 ## Reusing Your Custom Database
 
@@ -237,24 +232,17 @@ After creating your custom database, save it somewhere permanent:
 
 ```r
 # Save for future use to avoid reprocessing
-saveRDS(custom_Reactome_Data, "my_permanent_Reactome_Data.rds")
+saveRDS(Reactome_Data, "my_permanent_Reactome_Data.rds")
 ```
 
-In future sessions, simply load this file instead of reprocessing everything:
+In future sessions, simply load this file into the global environment:
 
 ```r
-custom_Reactome_Data <- readRDS("my_permanent_Reactome_Data.rds")
-original_Reactome_Data <- SeuratExtendData::Reactome_Data
-assignInNamespace("Reactome_Data", custom_Reactome_Data, ns = "SeuratExtendData")
+Reactome_Data <- readRDS("my_permanent_Reactome_Data.rds")
+# Now you can use SeuratExtend functions with your custom data
 ```
 
 ## Troubleshooting
-
-- **BioMart connectivity issues**: The script attempts to use different BioMart mirrors if the default one fails. Common mirrors include: "uswest", "useast", "asia", and "www". You can try modifying the script to use a specific mirror if needed:
-  ```r
-  # In the create_Reactome_Data.R script, find the biomaRt connection section and change:
-  mart <- useEnsembl(biomart = "ensembl", mirror = "uswest") # Try "useast", "asia", or "www"
-  ```
 
 - **Package not found**: Install any missing packages using `install.packages()` or `BiocManager::install()`
 
