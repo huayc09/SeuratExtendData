@@ -34,3 +34,7 @@ vignettes/*.pdf
 
 # Shiny token, see https://shiny.rstudio.com/articles/shinyapps.html
 rsconnect/
+tmp/
+
+# Test script in data-raw
+data-raw/Test.R
